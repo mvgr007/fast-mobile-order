@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { products, type Sector } from "./mock";
 
 export type TableStatus = "livre" | "ocupada" | "conta";
-export type Table = { id: number; status: TableStatus; openedAt?: number; waiter?: string };
+export type Table = { id: number; status: TableStatus; openedAt?: number | undefined; waiter?: string | undefined };
 export type LineItem = { uid: string; productId: string; name: string; qty: number; unit: number; addons: string[]; notes: string };
 export type Ticket = { id: string; tableId: number; sector: Sector; items: LineItem[]; status: "novo" | "preparando" | "pronto"; createdAt: number; waiter: string };
 
