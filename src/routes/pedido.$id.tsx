@@ -113,12 +113,15 @@ function Pedido() {
           )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {list.map((p) => (
-              <button key={p.id} onClick={() => setPicking(p)} className="rounded-2xl border border-border bg-card p-4 text-left transition hover:border-primary active:scale-[0.98]">
+              <button key={p.id} onClick={() => setPicking(p)} className="overflow-hidden rounded-2xl border border-border bg-card text-left transition hover:border-primary active:scale-[0.98]">
+                <ProductImage p={p} className="aspect-[3/2] w-full" />
+                <div className="p-4">
                 <div className="font-display text-base font-semibold">{p.name}</div>
                 {p.desc && <div className="mt-0.5 text-xs text-muted-foreground">{p.desc}</div>}
                 <div className="mt-3 flex items-center justify-between">
                   <span className="font-semibold text-primary">{brl(p.price)}</span>
                   <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{p.sector}</span>
+                </div>
                 </div>
               </button>
             ))}
@@ -151,6 +154,7 @@ function ProductSheet({ p, onClose, onAdd }: { p: Product; onClose: () => void; 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/70 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <ProductImage p={p} className="-mx-5 -mt-5 mb-4 aspect-[2/1] w-[calc(100%+2.5rem)] rounded-t-2xl" />
         <div className="flex items-start justify-between">
           <div><h3 className="font-display text-xl font-bold">{p.name}</h3>{p.desc && <p className="text-sm text-muted-foreground">{p.desc}</p>}</div>
           <button onClick={onClose} aria-label="Fechar"><X className="h-5 w-5" /></button>
@@ -192,4 +196,13 @@ function ProductSheet({ p, onClose, onAdd }: { p: Product; onClose: () => void; 
       </div>
     </div>
   );
+}
+
+const catIcon: Record<string, string> = { Lanches: "🍔", Pizzas: "🍕", Pratos: "🍽️", Bebidas: "🥤", Sobremesas: "🍰" };
+
+function ProductImage({ p, className = "" }: { p: Product; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (p.imageUrl && !failed)
+    return <img src={p.imageUrl} alt={p.name} loading="lazy" width={768} height={512} onError={() => setFailed(true)} className={`object-cover ${className}`} />;
+  return <div className={`flex items-center justify-center bg-secondary text-4xl ${className}`} aria-hidden>{catIcon[p.category] ?? "🍴"}</div>;
 }
