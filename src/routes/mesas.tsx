@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, RotateCcw } from "lucide-react";
+import { Clock, Plus, Receipt, RotateCcw } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useStore, tableTotal, type TableStatus } from "@/lib/store";
 import { brl, minutesSince } from "@/lib/mock";
@@ -49,22 +49,41 @@ function Mesas() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {list.map((t) => {
           const total = tableTotal(tickets, t.id);
+          const head = (
+            <div className="flex items-start justify-between">
+              <span className="font-display text-3xl font-bold">{String(t.id).padStart(2, "0")}</span>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className={`h-2 w-2 rounded-full ${dot[t.status]}`} />{label[t.status]}
+              </span>
+            </div>
+          );
+          if (t.status === "livre") {
+            return (
+              <Link key={t.id} to="/pedido/$id" params={{ id: String(t.id) }}
+                className={`flex aspect-[4/3] flex-col justify-between rounded-2xl border-2 p-4 transition active:scale-[0.98] ${style[t.status]}`}>
+                {head}
+                <div className="text-xs text-muted-foreground">Toque para abrir</div>
+              </Link>
+            );
+          }
           return (
-            <Link key={t.id} to={t.status === "conta" ? "/conta/$id" : "/pedido/$id"} params={{ id: String(t.id) }}
-              className={`flex aspect-[4/3] flex-col justify-between rounded-2xl border-2 p-4 transition active:scale-[0.98] ${style[t.status]}`}>
-              <div className="flex items-start justify-between">
-                <span className="font-display text-3xl font-bold">{String(t.id).padStart(2, "0")}</span>
-                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className={`h-2 w-2 rounded-full ${dot[t.status]}`} />{label[t.status]}
-                </span>
+            <div key={t.id} className={`flex flex-col gap-3 rounded-2xl border-2 p-4 ${style[t.status]}`}>
+              {head}
+              <div className="text-sm">
+                <div className="font-semibold">{brl(total)}</div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{minutesSince(t.openedAt)} min · {t.waiter}</div>
               </div>
-              {t.status !== "livre" ? (
-                <div className="text-sm">
-                  <div className="font-semibold">{brl(total)}</div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{minutesSince(t.openedAt)} min · {t.waiter}</div>
-                </div>
-              ) : <div className="text-xs text-muted-foreground">Toque para abrir</div>}
-            </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link to="/pedido/$id" params={{ id: String(t.id) }}
+                  className="flex h-10 items-center justify-center gap-1 rounded-lg bg-secondary text-xs font-semibold active:scale-95">
+                  <Plus className="h-4 w-4" /> Pedido
+                </Link>
+                <Link to="/conta/$id" params={{ id: String(t.id) }}
+                  className="flex h-10 items-center justify-center gap-1 rounded-lg bg-primary text-xs font-semibold text-primary-foreground active:scale-95">
+                  <Receipt className="h-4 w-4" /> Ver conta
+                </Link>
+              </div>
+            </div>
           );
         })}
       </div>
