@@ -113,3 +113,10 @@
     color: var(--color-foreground);
   }
 }
+
+@media print {
+  @page { size: 80mm auto; margin: 2mm; }
+  body * { visibility: hidden; }
+  #cupom, #cupom * { visibility: visible; }
+  #cupom { position: absolute; left: 0; top: 0; }
+}
