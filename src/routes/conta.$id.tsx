@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Banknote, CreditCard, Minus, Plus, QrCode, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Banknote, CreditCard, Minus, Plus, QrCode, CheckCircle2, Printer, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { useStore, lineTotal, tableItems } from "@/lib/store";
+import { useStore, lineTotal, tableItems, type LineItem } from "@/lib/store";
 import { brl } from "@/lib/mock";
 
 export const Route = createFileRoute("/conta/$id")({
@@ -38,6 +38,10 @@ function Conta() {
   const subtotal = items.reduce((a, i) => a + lineTotal(i), 0);
   const fee = service ? subtotal * 0.1 : 0;
   const total = subtotal + fee;
+
+  const [preview, setPreview] = useState(false);
+  const waiter = useStore((s) => s.tables.find((t) => t.id === id)?.waiter);
+  const receipt = buildReceipt({ id, items, subtotal, fee, total, people, waiter });
 
   const finish = () => {
     closeTable(id);
@@ -96,6 +100,10 @@ function Conta() {
               ))}
             </div>
           </div>
+          <button disabled={!items.length} onClick={() => setPreview(true)}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border font-medium disabled:opacity-40">
+            <Printer className="h-4 w-4" /> Imprimir pré-conta (cupom 40 col.)
+          </button>
           <button disabled={!items.length} onClick={finish}
             className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary font-display text-lg font-semibold text-primary-foreground disabled:opacity-40">
             <CheckCircle2 className="h-5 w-5" /> Receber e liberar mesa
@@ -103,6 +111,52 @@ function Conta() {
           <p className="text-center text-xs text-muted-foreground">Pagamento simulado — na versão final emite NFC-e pelo FAST.</p>
         </section>
       </div>
+      {preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 print:static print:bg-transparent print:p-0" onClick={() => setPreview(false)}>
+          <div className="max-h-[90vh] overflow-auto rounded-2xl border border-border bg-card p-4 print:max-h-none print:border-0 print:p-0" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between print:hidden">
+              <h3 className="font-display font-semibold">Pré-conta · Mesa {id}</h3>
+              <button onClick={() => setPreview(false)} aria-label="Fechar"><X className="h-5 w-5" /></button>
+            </div>
+            <pre id="cupom" className="rounded-md bg-foreground p-3 font-mono text-[12px] leading-tight text-background print:bg-transparent print:p-0 print:text-black">{receipt}</pre>
+            <button onClick={() => { window.print(); toast.success("Pré-conta enviada para impressão"); }}
+              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground print:hidden">
+              <Printer className="h-4 w-4" /> Imprimir
+            </button>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
+}
+
+const W = 40;
+const center = (t: string) => t.slice(0, W).padStart(Math.floor((W + Math.min(t.length, W)) / 2)).padEnd(W);
+const lr = (l: string, r: string) => { const room = W - r.length - 1; return (l.length > room ? l.slice(0, room) : l).padEnd(room) + " " + r; };
+const money = (v: number) => v.toFixed(2).replace(".", ",");
+
+function buildReceipt({ id, items, subtotal, fee, total, people, waiter }: { id: number; items: LineItem[]; subtotal: number; fee: number; total: number; people: number; waiter?: string }) {
+  const line = "-".repeat(W);
+  const d = new Date();
+  const out = [
+    center("RESTAURANTE DEMONSTRACAO"),
+    center("CNPJ 00.000.000/0001-00"),
+    line,
+    center("*** PRE-CONTA - MESA " + String(id).padStart(2, "0") + " ***"),
+    center("NAO E DOCUMENTO FISCAL"),
+    line,
+    lr(`Data: ${d.toLocaleDateString("pt-BR")}`, d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })),
+    `Garcom: ${waiter ?? "-"}`,
+    line,
+    lr("QTD ITEM", "TOTAL"),
+  ];
+  items.forEach((i) => {
+    out.push(lr(`${i.qty}x ${i.name}`, money(lineTotal(i))));
+    i.addons.forEach((a) => out.push(`   + ${a}`.slice(0, W)));
+    if (i.notes) out.push(`   Obs: ${i.notes}`.slice(0, W));
+  });
+  out.push(line, lr("Subtotal", money(subtotal)), lr("Taxa de servico (10%)", money(fee)), lr("TOTAL R$", money(total)));
+  if (people > 1) out.push(lr(`Dividido por ${people} pessoas`, money(total / people)));
+  out.push(line, center("Obrigado pela preferencia!"), center("FAST Mobile - Insertsoft"));
+  return out.join("\n");
 }
