@@ -135,7 +135,7 @@ const center = (t: string) => t.slice(0, W).padStart(Math.floor((W + Math.min(t.
 const lr = (l: string, r: string) => { const room = W - r.length - 1; return (l.length > room ? l.slice(0, room) : l).padEnd(room) + " " + r; };
 const money = (v: number) => v.toFixed(2).replace(".", ",");
 
-function buildReceipt({ id, items, subtotal, fee, total, people, waiter }: { id: number; items: LineItem[]; subtotal: number; fee: number; total: number; people: number; waiter?: string }) {
+function buildReceipt({ id, items, subtotal, fee, total, people, waiter }: { id: number; items: LineItem[]; subtotal: number; fee: number; total: number; people: number; waiter?: string | undefined }) {
   const line = "-".repeat(W);
   const d = new Date();
   const out = [
