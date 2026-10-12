@@ -7,8 +7,12 @@ export type Table = { id: number; status: TableStatus; openedAt?: number | undef
 export type LineItem = { uid: string; productId: string; name: string; qty: number; unit: number; addons: string[]; notes: string };
 export type Ticket = { id: string; tableId: number; sector: Sector; items: LineItem[]; status: "novo" | "preparando" | "pronto"; createdAt: number; waiter: string };
 
+export type Config = { host: string; port: number; demo: boolean; kioskTable: number | null; adminPin: string };
+
 type State = {
   waiter: string | null;
+  config: Config;
+  setConfig: (c: Partial<Config>) => void;
   tables: Table[];
   carts: Record<number, LineItem[]>;
   tickets: Ticket[];
@@ -51,6 +55,8 @@ export const useStore = create<State>()(
   persist(
     (set, get) => ({
       waiter: null,
+      config: { host: "192.168.0.10", port: 8090, demo: true, kioskTable: null, adminPin: "0000" },
+      setConfig: (c) => set((s) => ({ config: { ...s.config, ...c } })),
       ...initial(),
       login: (name) => set({ waiter: name }),
       logout: () => set({ waiter: null }),

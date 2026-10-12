@@ -24,7 +24,7 @@ export function AppShell({ title, back, children }: { title: string; back?: Reac
               <ChefHat className="h-4 w-4" /><span className="hidden sm:inline">Cozinha</span>
             </Link>
             {waiter && (
-              <button onClick={() => { logout(); nav({ to: "/" }); }} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary">
+              <button onClick={() => { logout(); nav({ to: "/garcom" }); }} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary">
                 <LogOut className="h-4 w-4" /><span className="hidden md:inline">{waiter}</span>
               </button>
             )}
