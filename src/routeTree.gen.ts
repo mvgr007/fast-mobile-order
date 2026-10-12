@@ -9,12 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AutoatendimentoRouteImport } from './routes/autoatendimento'
+import { Route as ConfigRouteImport } from './routes/config'
 import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as GarcomRouteImport } from './routes/garcom'
 import { Route as MesasRouteImport } from './routes/mesas'
 import { Route as ContaIdRouteImport } from './routes/conta.$id'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutoatendimentoRoute = AutoatendimentoRouteImport.update({
+  id: '/autoatendimento',
+  path: '/autoatendimento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfigRoute = ConfigRouteImport.update({
+  id: '/config',
+  path: '/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CozinhaRoute = CozinhaRouteImport.update({
   id: '/cozinha',
   path: '/cozinha',
@@ -42,6 +60,9 @@ const PedidoIdRoute = PedidoIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/autoatendimento': typeof AutoatendimentoRoute
+  '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
@@ -49,6 +70,9 @@ export interface FileRoutesByFullPath {
   '/pedido/$id': typeof PedidoIdRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/autoatendimento': typeof AutoatendimentoRoute
+  '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
@@ -57,6 +81,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/autoatendimento': typeof AutoatendimentoRoute
+  '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
@@ -65,11 +92,30 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/cozinha' | '/garcom' | '/mesas' | '/conta/$id' | '/pedido/$id'
+  fullPaths:
+    | '/'
+    | '/autoatendimento'
+    | '/config'
+    | '/cozinha'
+    | '/garcom'
+    | '/mesas'
+    | '/conta/$id'
+    | '/pedido/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/cozinha' | '/garcom' | '/mesas' | '/conta/$id' | '/pedido/$id'
+  to:
+    | '/'
+    | '/autoatendimento'
+    | '/config'
+    | '/cozinha'
+    | '/garcom'
+    | '/mesas'
+    | '/conta/$id'
+    | '/pedido/$id'
   id:
     | '__root__'
+    | '/'
+    | '/autoatendimento'
+    | '/config'
     | '/cozinha'
     | '/garcom'
     | '/mesas'
@@ -78,6 +124,9 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  AutoatendimentoRoute: typeof AutoatendimentoRoute
+  ConfigRoute: typeof ConfigRoute
   CozinhaRoute: typeof CozinhaRoute
   GarcomRoute: typeof GarcomRoute
   MesasRoute: typeof MesasRoute
@@ -87,6 +136,27 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autoatendimento': {
+      id: '/autoatendimento'
+      path: '/autoatendimento'
+      fullPath: '/autoatendimento'
+      preLoaderRoute: typeof AutoatendimentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/config': {
+      id: '/config'
+      path: '/config'
+      fullPath: '/config'
+      preLoaderRoute: typeof ConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cozinha': {
       id: '/cozinha'
       path: '/cozinha'
@@ -126,6 +196,9 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AutoatendimentoRoute: AutoatendimentoRoute,
+  ConfigRoute: ConfigRoute,
   CozinhaRoute: CozinhaRoute,
   GarcomRoute: GarcomRoute,
   MesasRoute: MesasRoute,
