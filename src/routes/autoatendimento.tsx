@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Bell, Receipt, ShoppingBag, Minus, Plus, Settings, X } from "lucide-react";
+import { Bell, Receipt, ShoppingBag, Minus, Plus, Settings, X, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { categories, products, brl } from "@/lib/mock";
 import { useStore, tableItems, tableTotal, lineTotal } from "@/lib/store";
@@ -21,11 +21,15 @@ export const Route = createFileRoute("/autoatendimento")({
 
 function Kiosk() {
   const table = useStore((s) => s.config.kioskTable);
+  const adminPin = useStore((s) => s.config.adminPin);
   const carts = useStore((s) => s.carts);
   const tickets = useStore((s) => s.tickets);
   const { addToCart, changeQty, sendOrder, requestBill, login } = useStore.getState();
   const [cat, setCat] = useState(categories[0]);
   const [panel, setPanel] = useState<null | "cart" | "bill">(null);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [exitPin, setExitPin] = useState("");
+  const nav = useNavigate();
 
   if (!table) {
     return (
@@ -51,8 +55,30 @@ function Kiosk() {
     toast.success("Pedido enviado! Em breve o garçom trará até você.");
   };
 
+  const confirmExit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (exitPin !== adminPin) { toast.error("Senha incorreta"); setExitPin(""); return; }
+    setExitOpen(false);
+    toast.success("Autoatendimento encerrado.");
+    nav({ to: "/" });
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28 text-foreground">
+      {exitOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <form onSubmit={confirmExit} className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
+            <LogOut className="h-10 w-10 text-primary" />
+            <h2 className="mt-3 font-display text-2xl font-bold">Encerrar autoatendimento</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Digite a senha do gerente ou administrador cadastrado no FAST (demo: {adminPin}).</p>
+            <input type="password" inputMode="numeric" autoFocus value={exitPin} onChange={(e) => setExitPin(e.target.value)} placeholder="Senha" className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-lg" />
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setExitOpen(false)} className="rounded-xl bg-secondary py-3 font-semibold">Cancelar</button>
+              <button type="submit" disabled={!exitPin} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50">Confirmar</button>
+            </div>
+          </form>
+        </div>
+      )}
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
@@ -62,6 +88,7 @@ function Kiosk() {
           <div className="flex gap-2">
             <button onClick={() => toast.success("Garçom chamado! Ele já está a caminho.")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Bell className="h-5 w-5" /><span className="hidden sm:inline">Chamar garçom</span></button>
             <button onClick={() => setPanel("bill")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Receipt className="h-5 w-5" /><span className="hidden sm:inline">Minha conta</span></button>
+            <button onClick={() => { setExitPin(""); setExitOpen(true); }} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold text-muted-foreground" aria-label="Sair"><LogOut className="h-5 w-5" /><span className="hidden sm:inline">Sair</span></button>
           </div>
         </div>
         <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3">

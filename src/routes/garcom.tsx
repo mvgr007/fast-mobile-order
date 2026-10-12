@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Delete } from "lucide-react";
+import { ArrowLeft, Delete } from "lucide-react";
 import { waiters } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 
@@ -37,6 +37,9 @@ function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
       <div className="w-full max-w-md">
+        <Link to="/" className="mb-4 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary">
+          <ArrowLeft className="h-4 w-4" />Trocar modo
+        </Link>
         <div className="mb-8 text-center">
           <span className="rounded-md bg-primary px-3 py-1 font-display text-sm font-bold tracking-widest text-primary-foreground">FAST</span>
           <h1 className="mt-4 font-display text-3xl font-bold">Mobile</h1>
