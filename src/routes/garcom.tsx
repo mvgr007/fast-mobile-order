@@ -4,12 +4,12 @@ import { Delete } from "lucide-react";
 import { waiters } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/garcom")({
   head: () => ({
     meta: [
-      { title: "FAST Mobile — Entrada do garçom" },
+      { title: "FAST Mobile — Login do garçom" },
       { name: "description", content: "Protótipo do Insertsoft FAST Mobile para tirar pedidos na mesa pelo tablet ou celular." },
-      { property: "og:title", content: "FAST Mobile — Entrada do garçom" },
+      { property: "og:title", content: "FAST Mobile — Login do garçom" },
       { property: "og:description", content: "Pedidos na mesa pelo navegador do tablet ou celular." },
     ],
   }),
