@@ -9,20 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as CozinhaRouteImport } from './routes/cozinha'
+import { Route as GarcomRouteImport } from './routes/garcom'
 import { Route as MesasRouteImport } from './routes/mesas'
 import { Route as ContaIdRouteImport } from './routes/conta.$id'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CozinhaRoute = CozinhaRouteImport.update({
   id: '/cozinha',
   path: '/cozinha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GarcomRoute = GarcomRouteImport.update({
+  id: '/garcom',
+  path: '/garcom',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MesasRoute = MesasRouteImport.update({
@@ -42,38 +42,44 @@ const PedidoIdRoute = PedidoIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/cozinha': typeof CozinhaRoute
+  '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/cozinha': typeof CozinhaRoute
+  '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/cozinha': typeof CozinhaRoute
+  '/garcom': typeof GarcomRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cozinha' | '/mesas' | '/conta/$id' | '/pedido/$id'
+  fullPaths: '/cozinha' | '/garcom' | '/mesas' | '/conta/$id' | '/pedido/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cozinha' | '/mesas' | '/conta/$id' | '/pedido/$id'
-  id: '__root__' | '/' | '/cozinha' | '/mesas' | '/conta/$id' | '/pedido/$id'
+  to: '/cozinha' | '/garcom' | '/mesas' | '/conta/$id' | '/pedido/$id'
+  id:
+    | '__root__'
+    | '/cozinha'
+    | '/garcom'
+    | '/mesas'
+    | '/conta/$id'
+    | '/pedido/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   CozinhaRoute: typeof CozinhaRoute
+  GarcomRoute: typeof GarcomRoute
   MesasRoute: typeof MesasRoute
   ContaIdRoute: typeof ContaIdRoute
   PedidoIdRoute: typeof PedidoIdRoute
@@ -81,18 +87,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/cozinha': {
       id: '/cozinha'
       path: '/cozinha'
       fullPath: '/cozinha'
       preLoaderRoute: typeof CozinhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/garcom': {
+      id: '/garcom'
+      path: '/garcom'
+      fullPath: '/garcom'
+      preLoaderRoute: typeof GarcomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mesas': {
@@ -120,8 +126,8 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   CozinhaRoute: CozinhaRoute,
+  GarcomRoute: GarcomRoute,
   MesasRoute: MesasRoute,
   ContaIdRoute: ContaIdRoute,
   PedidoIdRoute: PedidoIdRoute,
