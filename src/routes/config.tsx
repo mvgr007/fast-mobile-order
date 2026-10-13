@@ -42,7 +42,7 @@ function ConfigPage() {
     } finally { setTesting(false); }
   };
 
-  const save = () => { setConfig(form); toast.success("Configurações salvas"); };
+  const save = () => { setConfig(form); toast.success("Configurações salvas"); navigate({ to: "/autoatendimento" }); };
 
   const input = "mt-1 w-full rounded-xl border border-border bg-background px-4 py-3 text-lg";
 
