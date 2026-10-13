@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Bell, Receipt, ShoppingBag, Minus, Plus, Settings, X, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { categories, products, brl } from "@/lib/mock";
@@ -55,7 +55,7 @@ function Kiosk() {
     toast.success("Pedido enviado! Em breve o garçom trará até você.");
   };
 
-  const confirmExit = (e: React.FormEvent) => {
+  const confirmExit = (e: FormEvent) => {
     e.preventDefault();
     if (exitPin !== adminPin) { toast.error("Senha incorreta"); setExitPin(""); return; }
     setExitOpen(false);
