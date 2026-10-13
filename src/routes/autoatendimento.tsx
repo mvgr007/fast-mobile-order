@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Bell, Receipt, ShoppingBag, Minus, Plus, Settings, X, LogOut } from "lucide-react";
+import { Bell, Receipt, ShoppingCart, Minus, Plus, Settings, X, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { categories, products, brl } from "@/lib/mock";
+import { categories, products, brl, type Product } from "@/lib/mock";
 import { useStore, tableItems, tableTotal, lineTotal } from "@/lib/store";
 
 export const Route = createFileRoute("/autoatendimento")({
@@ -29,6 +29,9 @@ function Kiosk() {
   const [panel, setPanel] = useState<null | "cart" | "bill">(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitPin, setExitPin] = useState("");
+  const [pick, setPick] = useState<Product | null>(null);
+  const [pickQty, setPickQty] = useState(1);
+  const [step, setStep] = useState<null | "confirm" | "more">(null);
   const nav = useNavigate();
 
   if (!table) {
@@ -86,6 +89,7 @@ function Kiosk() {
             <h1 className="font-display text-xl font-bold">Mesa {table}</h1>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setPanel("cart")} className="relative flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold" aria-label="Carrinho"><ShoppingCart className="h-5 w-5" /><span className="hidden sm:inline">Carrinho</span>{cart.length > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">{cart.reduce((a, i) => a + i.qty, 0)}</span>}</button>
             <button onClick={() => toast.success("Garçom chamado! Ele já está a caminho.")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Bell className="h-5 w-5" /><span className="hidden sm:inline">Chamar garçom</span></button>
             <button onClick={() => setPanel("bill")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Receipt className="h-5 w-5" /><span className="hidden sm:inline">Minha conta</span></button>
             <button onClick={() => { setExitPin(""); setExitOpen(true); }} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold text-muted-foreground" aria-label="Sair"><LogOut className="h-5 w-5" /><span className="hidden sm:inline">Sair</span></button>
@@ -100,7 +104,7 @@ function Kiosk() {
 
       <main className="mx-auto grid max-w-6xl gap-4 px-4 py-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.filter((p) => p.category === cat).map((p) => (
-          <button key={p.id} onClick={() => { addToCart(table, { productId: p.id, name: p.name, qty: 1, unit: p.price, addons: [], notes: "" }); toast(`${p.name} adicionado`); }}
+          <button key={p.id} onClick={() => { setPick(p); setPickQty(1); setStep("confirm"); }}
             className="overflow-hidden rounded-2xl border border-border bg-card text-left transition active:scale-[0.98]">
             {p.imageUrl ? <img src={p.imageUrl} alt={p.name} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <div className="flex aspect-[4/3] items-center justify-center bg-secondary font-display text-2xl text-muted-foreground">{p.category}</div>}
             <div className="p-4">
@@ -112,9 +116,41 @@ function Kiosk() {
         ))}
       </main>
 
+      {pick && step && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center">
+            {step === "confirm" ? (
+              <>
+                <h2 className="font-display text-xl font-bold">Confirma o lançamento do produto {pick.name} na quantidade {pickQty}?</h2>
+                <div className="mt-5 flex items-center justify-center gap-5">
+                  <button onClick={() => setPickQty(Math.max(1, pickQty - 1))} className="rounded-xl bg-secondary p-3" aria-label="Diminuir"><Minus className="h-5 w-5" /></button>
+                  <span className="w-10 font-display text-3xl font-bold">{pickQty}</span>
+                  <button onClick={() => setPickQty(pickQty + 1)} className="rounded-xl bg-secondary p-3" aria-label="Aumentar"><Plus className="h-5 w-5" /></button>
+                </div>
+                <p className="mt-3 font-display text-lg font-semibold text-primary">{brl(pick.price * pickQty)}</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button onClick={() => { setPick(null); setStep(null); }} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
+                  <button onClick={() => { addToCart(table, { productId: pick.id, name: pick.name, qty: pickQty, unit: pick.price, addons: [], notes: "" }); setStep("more"); }} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Sim, confirmar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="mx-auto h-10 w-10 text-primary" />
+                <h2 className="mt-3 font-display text-xl font-bold">{pickQty}× {pick.name} foi para o carrinho.</h2>
+                <p className="mt-2 text-muted-foreground">Deseja lançar mais itens?</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button onClick={() => { setPick(null); setStep(null); setPanel("cart"); }} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
+                  <button onClick={() => { setPick(null); setStep(null); }} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Sim</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {cart.length > 0 && (
         <button onClick={() => setPanel("cart")} className="fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-xl items-center justify-between rounded-2xl bg-primary px-6 py-4 font-display text-lg font-bold text-primary-foreground shadow-lg">
-          <span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" />Ver pedido ({cart.reduce((a, i) => a + i.qty, 0)})</span>
+          <span className="flex items-center gap-2 text-left"><ShoppingCart className="h-5 w-5 shrink-0" />{cart.reduce((a, i) => a + i.qty, 0)} no carrinho — toque para enviar ao preparo</span>
           <span>{brl(cartTotal)}</span>
         </button>
       )}
