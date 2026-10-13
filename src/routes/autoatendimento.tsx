@@ -159,7 +159,7 @@ function Kiosk() {
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-background/70 sm:items-center" onClick={() => setPanel(null)}>
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-card p-6 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-2xl font-bold">{panel === "cart" ? "Seu pedido" : "Minha conta"}</h2>
+              <h2 className="font-display text-2xl font-bold">{panel === "cart" ? "Carrinho" : "Minha conta"}</h2>
               <button onClick={() => setPanel(null)} aria-label="Fechar"><X className="h-6 w-6" /></button>
             </div>
             {panel === "cart" ? (
@@ -175,7 +175,7 @@ function Kiosk() {
                   </div>
                 ))}
                 <div className="mt-4 flex justify-between font-display text-xl font-bold"><span>Total</span><span>{brl(cartTotal)}</span></div>
-                <button onClick={send} disabled={!cart.length} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">Enviar pedido</button>
+                <button onClick={send} disabled={!cart.length} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">Confirmar lançamento para preparo</button>
               </>
             ) : (
               <>
