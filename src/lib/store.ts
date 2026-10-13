@@ -20,6 +20,7 @@ type State = {
   logout: () => void;
   addToCart: (tableId: number, item: Omit<LineItem, "uid">) => void;
   changeQty: (tableId: number, uid: string, delta: number) => void;
+  removeItem: (tableId: number, uid: string) => void;
   sendOrder: (tableId: number) => void;
   setTicket: (id: string, status: Ticket["status"]) => void;
   requestBill: (tableId: number) => void;
@@ -68,6 +69,10 @@ export const useStore = create<State>()(
             ...s.carts,
             [tableId]: (s.carts[tableId] ?? []).map((i) => (i.uid === id ? { ...i, qty: i.qty + d } : i)).filter((i) => i.qty > 0),
           },
+        })),
+      removeItem: (tableId, id) =>
+        set((s) => ({
+          carts: { ...s.carts, [tableId]: (s.carts[tableId] ?? []).filter((i) => i.uid !== id) },
         })),
       sendOrder: (tableId) => {
         const s = get();
