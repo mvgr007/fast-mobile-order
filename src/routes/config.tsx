@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, Wifi, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/config")({
 });
 
 function ConfigPage() {
+  const navigate = useNavigate();
   const config = useStore((s) => s.config);
   const setConfig = useStore((s) => s.setConfig);
   const [unlocked, setUnlocked] = useState(false);
@@ -41,7 +42,7 @@ function ConfigPage() {
     } finally { setTesting(false); }
   };
 
-  const save = () => { setConfig(form); toast.success("Configurações salvas"); };
+  const save = () => { setConfig(form); toast.success("Configurações salvas"); navigate({ to: "/autoatendimento" }); };
 
   const input = "mt-1 w-full rounded-xl border border-border bg-background px-4 py-3 text-lg";
 
