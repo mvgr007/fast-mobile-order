@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Bell, Receipt, ShoppingCart, Minus, Plus, Settings, X, LogOut } from "lucide-react";
+import { Bell, Receipt, ShoppingCart, Minus, Plus, Settings, X, LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { categories, products, brl, type Product } from "@/lib/mock";
 import { useStore, tableItems, tableTotal, lineTotal } from "@/lib/store";
@@ -166,17 +166,25 @@ function Kiosk() {
               <>
                 {cart.length === 0 && <p className="text-muted-foreground">Seu carrinho está vazio.</p>}
                 {cart.map((i) => (
-                  <div key={i.uid} className="flex items-center justify-between border-b border-border py-3">
-                    <div><div className="font-semibold">{i.name}</div><div className="text-sm text-muted-foreground">{brl(i.unit)}</div></div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => changeQty(table, i.uid, -1)} className="rounded-lg bg-secondary p-2"><Minus className="h-4 w-4" /></button>
+                  <div key={i.uid} className="flex items-center justify-between gap-3 border-b border-border py-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold">{i.name}</div>
+                      <div className="text-sm text-muted-foreground">{i.qty}× {brl(i.unit)} = {brl(lineTotal(i))}</div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button onClick={() => changeQty(table, i.uid, -1)} className="rounded-lg bg-secondary p-2" aria-label={`Diminuir quantidade de ${i.name}`}><Minus className="h-4 w-4" /></button>
                       <span className="w-6 text-center font-bold">{i.qty}</span>
-                      <button onClick={() => changeQty(table, i.uid, 1)} className="rounded-lg bg-secondary p-2"><Plus className="h-4 w-4" /></button>
+                      <button onClick={() => changeQty(table, i.uid, 1)} className="rounded-lg bg-secondary p-2" aria-label={`Aumentar quantidade de ${i.name}`}><Plus className="h-4 w-4" /></button>
+                      <button onClick={() => removeItem(table, i.uid)} className="rounded-lg bg-destructive/10 p-2 text-destructive" aria-label={`Remover ${i.name} do carrinho`}><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
                 ))}
                 <div className="mt-4 flex justify-between font-display text-xl font-bold"><span>Total</span><span>{brl(cartTotal)}</span></div>
-                <button onClick={send} disabled={!cart.length} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">Confirmar lançamento para preparo</button>
+                {cart.length === 0 ? (
+                  <button onClick={() => setPanel(null)} className="mt-5 w-full rounded-xl bg-secondary py-4 font-display text-lg font-bold">Voltar ao cardápio</button>
+                ) : (
+                  <button onClick={send} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground">Confirmar lançamento para preparo</button>
+                )}
               </>
             ) : (
               <>
