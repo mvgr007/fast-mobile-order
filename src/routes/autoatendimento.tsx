@@ -164,6 +164,7 @@ function Kiosk() {
             </div>
             {panel === "cart" ? (
               <>
+                {cart.length === 0 && <p className="text-muted-foreground">Seu carrinho está vazio.</p>}
                 {cart.map((i) => (
                   <div key={i.uid} className="flex items-center justify-between border-b border-border py-3">
                     <div><div className="font-semibold">{i.name}</div><div className="text-sm text-muted-foreground">{brl(i.unit)}</div></div>
