@@ -24,7 +24,7 @@ function Kiosk() {
   const adminPin = useStore((s) => s.config.adminPin);
   const carts = useStore((s) => s.carts);
   const tickets = useStore((s) => s.tickets);
-  const { addToCart, changeQty, sendOrder, requestBill, login } = useStore.getState();
+  const { addToCart, changeQty, removeItem, sendOrder, requestBill, login } = useStore.getState();
   const [cat, setCat] = useState(categories[0]);
   const [panel, setPanel] = useState<null | "cart" | "bill">(null);
   const [exitOpen, setExitOpen] = useState(false);
