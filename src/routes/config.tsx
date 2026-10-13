@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, Wifi, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/config")({
 });
 
 function ConfigPage() {
+  const navigate = useNavigate();
   const config = useStore((s) => s.config);
   const setConfig = useStore((s) => s.setConfig);
   const [unlocked, setUnlocked] = useState(false);
