@@ -14,6 +14,7 @@ import { Route as AutoatendimentoRouteImport } from './routes/autoatendimento'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as GarcomRouteImport } from './routes/garcom'
+import { Route as LogsRouteImport } from './routes/logs'
 import { Route as MesasRouteImport } from './routes/mesas'
 import { Route as ContaIdRouteImport } from './routes/conta.$id'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
@@ -43,6 +44,11 @@ const GarcomRoute = GarcomRouteImport.update({
   path: '/garcom',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogsRoute = LogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MesasRoute = MesasRouteImport.update({
   id: '/mesas',
   path: '/mesas',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
+  '/logs': typeof LogsRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
+  '/logs': typeof LogsRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/config': typeof ConfigRoute
   '/cozinha': typeof CozinhaRoute
   '/garcom': typeof GarcomRoute
+  '/logs': typeof LogsRoute
   '/mesas': typeof MesasRoute
   '/conta/$id': typeof ContaIdRoute
   '/pedido/$id': typeof PedidoIdRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/config'
     | '/cozinha'
     | '/garcom'
+    | '/logs'
     | '/mesas'
     | '/conta/$id'
     | '/pedido/$id'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/config'
     | '/cozinha'
     | '/garcom'
+    | '/logs'
     | '/mesas'
     | '/conta/$id'
     | '/pedido/$id'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/config'
     | '/cozinha'
     | '/garcom'
+    | '/logs'
     | '/mesas'
     | '/conta/$id'
     | '/pedido/$id'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   ConfigRoute: typeof ConfigRoute
   CozinhaRoute: typeof CozinhaRoute
   GarcomRoute: typeof GarcomRoute
+  LogsRoute: typeof LogsRoute
   MesasRoute: typeof MesasRoute
   ContaIdRoute: typeof ContaIdRoute
   PedidoIdRoute: typeof PedidoIdRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GarcomRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/logs': {
+      id: '/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mesas': {
       id: '/mesas'
       path: '/mesas'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigRoute: ConfigRoute,
   CozinhaRoute: CozinhaRoute,
   GarcomRoute: GarcomRoute,
+  LogsRoute: LogsRoute,
   MesasRoute: MesasRoute,
   ContaIdRoute: ContaIdRoute,
   PedidoIdRoute: PedidoIdRoute,

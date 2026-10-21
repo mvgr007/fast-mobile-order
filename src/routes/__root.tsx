@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { useStore } from "@/lib/store";
+import { instalarCapturaGlobal } from "@/lib/logger";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -121,6 +122,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
     useStore.persist.rehydrate();
+    instalarCapturaGlobal();
   }, []);
 
   return (
