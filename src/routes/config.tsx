@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, Wifi, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
+import { registrarErro } from "@/lib/logger";
 
 export const Route = createFileRoute("/config")({
   head: () => ({
@@ -36,9 +37,10 @@ function ConfigPage() {
       const t = setTimeout(() => ctrl.abort(), 4000);
       const r = await fetch(`http://${form.host}:${form.port}/api/status`, { signal: ctrl.signal });
       clearTimeout(t);
-      r.ok ? toast.success("Conectado ao servidor FAST") : toast.error(`Servidor respondeu com erro ${r.status}`);
-    } catch {
-      toast.error("Não foi possível conectar. Verifique IP, porta e se o Conector FAST está ativo.");
+      r.ok ? toast.success("Conectado ao servidor FAST") : registrarErro("REDE_CONECTOR_OFFLINE", `HTTP ${r.status} em ${form.host}:${form.port}`);
+    } catch (e) {
+      const timeout = e instanceof DOMException && e.name === "AbortError";
+      registrarErro(timeout ? "REDE_TIMEOUT" : "REDE_IP_ALTERADO", `${form.host}:${form.port} - ${String(e)}`);
     } finally { setTesting(false); }
   };
 
@@ -56,7 +58,7 @@ function ConfigPage() {
           <div className="mt-6 rounded-2xl border border-border bg-card p-6">
             <Lock className="h-8 w-8 text-primary" />
             <p className="mt-3 text-muted-foreground">Área protegida. Digite a senha do administrador (demo: {config.adminPin}).</p>
-            <form onSubmit={(e) => { e.preventDefault(); pin === config.adminPin ? setUnlocked(true) : toast.error("Senha incorreta"); }} className="mt-4 flex gap-2">
+            <form onSubmit={(e) => { e.preventDefault(); pin === config.adminPin ? setUnlocked(true) : registrarErro("OP_SENHA_ADMIN", "Tela de configurações"); }} className="mt-4 flex gap-2">
               <input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} className={input + " mt-0"} placeholder="Senha" />
               <button className="rounded-xl bg-primary px-5 font-semibold text-primary-foreground">Entrar</button>
             </form>
@@ -92,6 +94,7 @@ function ConfigPage() {
               </label>
             </section>
 
+            <Link to="/logs" className="block w-full rounded-xl border border-border py-3 text-center font-semibold">Ver arquivos de log</Link>
             <button onClick={save} className="w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground">Salvar</button>
           </div>
         )}
