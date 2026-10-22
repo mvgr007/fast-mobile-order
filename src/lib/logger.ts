@@ -11,7 +11,7 @@ export type LogCategoria = "REDE" | "NEGOCIO" | "HARDWARE" | "DADOS" | "OPERACIO
 
 export interface LogTipo { codigo: string; categoria: LogCategoria; mensagem: string }
 
-export const TIPOS_ERRO: Record<string, LogTipo> = {
+export const TIPOS_ERRO = {
   REDE_SEM_SINAL: { codigo: "E101", categoria: "REDE", mensagem: "Sem sinal de Wi-Fi com o computador central." },
   REDE_IP_ALTERADO: { codigo: "E102", categoria: "REDE", mensagem: "Servidor FAST não encontrado no IP configurado." },
   REDE_FIREWALL: { codigo: "E103", categoria: "REDE", mensagem: "Porta do Conector bloqueada (firewall)." },
@@ -32,7 +32,7 @@ export const TIPOS_ERRO: Record<string, LogTipo> = {
   OP_SAIDA_KIOSK: { codigo: "E502", categoria: "OPERACIONAL", mensagem: "Tentativa de sair do autoatendimento sem senha." },
   OP_SENHA_ADMIN: { codigo: "E503", categoria: "OPERACIONAL", mensagem: "Senha administrativa incorreta." },
   APP_INESPERADO: { codigo: "E901", categoria: "APLICACAO", mensagem: "Erro inesperado na aplicação." },
-};
+} satisfies Record<string, LogTipo>;
 
 export type TipoErro = keyof typeof TIPOS_ERRO;
 
