@@ -1,3 +1,5 @@
+import { registrarErroInesperado } from "./logger";
+
 type LovableErrorOptions = {
   mechanism?: "manual" | "onerror" | "unhandledrejection" | "react_error_boundary";
   handled?: boolean;
@@ -26,6 +28,7 @@ declare global {
 
 export function reportLovableError(error: unknown, context: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
+  registrarErroInesperado(error, { origem: "Falha ao carregar ou renderizar a tela" });
   window.__lovableEvents?.captureException?.(
     error,
     {

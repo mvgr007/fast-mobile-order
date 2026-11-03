@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { detalharErro, type ErrorContext } from "./error-diagnostics";
 
 /**
  * Registro de erros do FAST Mobile.
@@ -67,8 +68,8 @@ export function registrarErro(tipo: TipoErro, detalhe = "", opts: { silencioso?:
 export function listarLogs(): { arquivo: string; conteudo: string }[] {
   const out: { arquivo: string; conteudo: string }[] = [];
   for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i)!;
-    if (k.startsWith(PREFIXO)) out.push({ arquivo: k.slice(PREFIXO.length), conteudo: localStorage.getItem(k) ?? "" });
+    const k = localStorage.key(i);
+    if (k?.startsWith(PREFIXO)) out.push({ arquivo: k.slice(PREFIXO.length), conteudo: localStorage.getItem(k) ?? "" });
   }
   return out.sort((a, b) => b.arquivo.localeCompare(a.arquivo));
 }
@@ -85,10 +86,16 @@ export function baixarLog(arquivo: string, conteudo: string) {
 export function apagarLog(arquivo: string) { localStorage.removeItem(PREFIXO + arquivo); }
 
 let capturaInstalada = false;
+export function registrarErroInesperado(error: unknown, context: ErrorContext) {
+  registrarErro("APP_INESPERADO", detalharErro(error, context), { silencioso: true });
+}
+
 export function instalarCapturaGlobal() {
   if (capturaInstalada || typeof window === "undefined") return;
   capturaInstalada = true;
-  window.addEventListener("error", (e) => registrarErro("APP_INESPERADO", e.message, { silencioso: true }));
-  window.addEventListener("unhandledrejection", (e) => registrarErro("APP_INESPERADO", String(e.reason), { silencioso: true }));
+  window.addEventListener("error", (e) => registrarErroInesperado(e.error ?? e.message, {
+    origem: "Erro de execução do navegador", arquivo: e.filename, linha: e.lineno, coluna: e.colno,
+  }));
+  window.addEventListener("unhandledrejection", (e) => registrarErroInesperado(e.reason, { origem: "Operação assíncrona não tratada" }));
   window.addEventListener("offline", () => registrarErro("REDE_SEM_SINAL", "Navegador ficou offline"));
 }

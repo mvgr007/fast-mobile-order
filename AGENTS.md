@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Demo state lives in a persisted zustand store (src/lib/store.ts) rehydrated client-side in __root; why: prototype without backend, avoids SSR hydration mismatch.
+- Browser and React-boundary failures share a bounded diagnostic formatter that collects only error fields and redacts credentials; why: useful E901 logs without serializing private session/request data.
