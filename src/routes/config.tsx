@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Lock, Wifi, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useStore } from "@/lib/store";
+import { useStore, urlServidor } from "@/lib/store";
 import { registrarErro } from "@/lib/logger";
 
 export const Route = createFileRoute("/config")({
@@ -31,13 +31,20 @@ function ConfigPage() {
 
   const test = async () => {
     if (form.demo) { toast.success("Modo demonstração: usando dados de exemplo"); return; }
+    // Uma página HTTPS não pode chamar um endereço HTTP: o navegador bloqueia (mixed content)
+    // e o fetch falharia com um erro genérico. Avisamos o motivo real.
+    if (window.location.protocol === "https:" && !form.https) {
+      registrarErro("REDE_CONTEUDO_MISTO", urlServidor(form));
+      return;
+    }
     setTesting(true);
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 4000);
-      const r = await fetch(`http://${form.host}:${form.port}/api/status`, { signal: ctrl.signal });
+      const r = await fetch(`${urlServidor(form)}/api/status`, { signal: ctrl.signal });
       clearTimeout(t);
-      r.ok ? toast.success("Conectado ao servidor FAST") : registrarErro("REDE_CONECTOR_OFFLINE", `HTTP ${r.status} em ${form.host}:${form.port}`);
+      if (r.ok) toast.success("Conectado ao servidor FAST");
+      else registrarErro("REDE_CONECTOR_OFFLINE", `HTTP ${r.status} em ${form.host}:${form.port}`);
     } catch (e) {
       const timeout = e instanceof DOMException && e.name === "AbortError";
       registrarErro(timeout ? "REDE_TIMEOUT" : "REDE_IP_ALTERADO", `${form.host}:${form.port} - ${String(e)}`);
@@ -57,8 +64,8 @@ function ConfigPage() {
         {!unlocked ? (
           <div className="mt-6 rounded-2xl border border-border bg-card p-6">
             <Lock className="h-8 w-8 text-primary" />
-            <p className="mt-3 text-muted-foreground">Área protegida. Digite a senha do administrador (demo: {config.adminPin}).</p>
-            <form onSubmit={(e) => { e.preventDefault(); pin === config.adminPin ? setUnlocked(true) : registrarErro("OP_SENHA_ADMIN", "Tela de configurações"); }} className="mt-4 flex gap-2">
+            <p className="mt-3 text-muted-foreground">Área protegida. Digite a senha do administrador{config.demo ? ` (demo: ${config.adminPin})` : ""}.</p>
+            <form onSubmit={(e) => { e.preventDefault(); if (pin === config.adminPin) setUnlocked(true); else registrarErro("OP_SENHA_ADMIN", "Tela de configurações"); }} className="mt-4 flex gap-2">
               <input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} className={input + " mt-0"} placeholder="Senha" />
               <button className="rounded-xl bg-primary px-5 font-semibold text-primary-foreground">Entrar</button>
             </form>
@@ -79,6 +86,13 @@ function ConfigPage() {
                   <input disabled={form.demo} type="number" value={form.port} onChange={(e) => setForm({ ...form, port: Number(e.target.value) })} className={input} />
                 </label>
               </div>
+              <label className={`mt-3 flex items-center gap-3 ${form.demo ? "opacity-50" : ""}`}>
+                <input type="checkbox" disabled={form.demo} checked={form.https} onChange={(e) => setForm({ ...form, https: e.target.checked })} className="h-5 w-5 accent-[var(--primary)]" />
+                Conector FAST usa HTTPS
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Obrigatório quando o FAST Mobile é aberto por um endereço https:// (o navegador bloqueia chamadas HTTP).
+              </p>
               <button onClick={test} disabled={testing} className="mt-4 flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 font-semibold">
                 {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />} Testar conexão
               </button>
@@ -90,7 +104,7 @@ function ConfigPage() {
                 <input type="number" min={1} value={form.kioskTable ?? ""} onChange={(e) => setForm({ ...form, kioskTable: e.target.value ? Number(e.target.value) : null })} className={input} placeholder="Ex.: 12" />
               </label>
               <label className="mt-4 block text-sm text-muted-foreground">Senha do administrador
-                <input value={form.adminPin} onChange={(e) => setForm({ ...form, adminPin: e.target.value })} className={input} />
+                <input type="password" inputMode="numeric" autoComplete="new-password" value={form.adminPin} onChange={(e) => setForm({ ...form, adminPin: e.target.value })} className={input} />
               </label>
             </section>
 

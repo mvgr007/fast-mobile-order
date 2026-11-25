@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, Delete } from "lucide-react";
 import { waiters } from "@/lib/mock";
 import { useStore } from "@/lib/store";
+import { registrarErro } from "@/lib/logger";
 
 export const Route = createFileRoute("/garcom")({
   head: () => ({
@@ -21,6 +22,7 @@ function Login() {
   const [pin, setPin] = useState("");
   const [err, setErr] = useState(false);
   const login = useStore((s) => s.login);
+  const demo = useStore((s) => s.config.demo);
   const nav = useNavigate();
   const w = waiters.find((x) => x.id === sel);
 
@@ -30,7 +32,7 @@ function Login() {
     setPin(next);
     if (next.length === 4 && w) {
       if (next === w.pin) { login(w.name); nav({ to: "/mesas" }); }
-      else { setErr(true); setPin(""); }
+      else { setErr(true); setPin(""); registrarErro("NEG_OPERADOR_INVALIDO", w.name, { silencioso: true }); }
     }
   };
 
@@ -50,7 +52,7 @@ function Login() {
             <button key={x.id} onClick={() => { setSel(x.id); setPin(""); setErr(false); }}
               className={`rounded-xl border p-4 text-left transition ${sel === x.id ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-secondary"}`}>
               <div className="font-display text-lg font-semibold">{x.name}</div>
-              <div className="text-xs text-muted-foreground">PIN demo: {x.pin}</div>
+              {demo && <div className="text-xs text-muted-foreground">PIN demo: {x.pin}</div>}
             </button>
           ))}
         </div>

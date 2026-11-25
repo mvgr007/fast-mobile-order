@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Clock, Plus, Receipt, RotateCcw } from "lucide-react";
+import { Bell, Clock, Plus, Receipt, RotateCcw } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useStore, tableTotal, type TableStatus } from "@/lib/store";
 import { brl, minutesSince } from "@/lib/mock";
@@ -29,12 +29,22 @@ function Mesas() {
   const tables = useStore((s) => s.tables);
   const tickets = useStore((s) => s.tickets);
   const reset = useStore((s) => s.reset);
+  const sales = useStore((s) => s.sales);
   const [filter, setFilter] = useState<TableStatus | "todas">("todas");
   const list = tables.filter((t) => filter === "todas" || t.status === filter);
   const count = (s: TableStatus) => tables.filter((t) => t.status === s).length;
+  const inicioDoDia = new Date().setHours(0, 0, 0, 0);
+  const vendasHoje = sales.filter((v) => v.closedAt >= inicioDoDia);
+  const chamados = tables.filter((t) => t.chamando);
 
   return (
     <AppShell title="Mesas">
+      {chamados.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-warning/60 bg-warning/10 p-3 text-sm">
+          <Bell className="h-4 w-4 shrink-0 text-warning" />
+          <span>Chamando garçom: {chamados.map((t) => `Mesa ${t.id}`).join(", ")}</span>
+        </div>
+      )}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {(["todas", "livre", "ocupada", "conta"] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
@@ -42,7 +52,10 @@ function Mesas() {
             {f === "todas" ? `Todas (${tables.length})` : `${label[f]} (${count(f)})`}
           </button>
         ))}
-        <button onClick={() => confirm("Restaurar dados de demonstração?") && reset()} className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <span className="ml-auto text-xs text-muted-foreground">
+          Vendas hoje: {vendasHoje.length} · {brl(vendasHoje.reduce((a, v) => a + v.total, 0))}
+        </span>
+        <button onClick={() => confirm("Restaurar dados de demonstração?") && reset()} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <RotateCcw className="h-3 w-3" /> Reiniciar demo
         </button>
       </div>
@@ -52,8 +65,9 @@ function Mesas() {
           const head = (
             <div className="flex items-start justify-between">
               <span className="font-display text-3xl font-bold">{String(t.id).padStart(2, "0")}</span>
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className={`h-2 w-2 rounded-full ${dot[t.status]}`} />{label[t.status]}
+              <span className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className={`h-2 w-2 rounded-full ${dot[t.status]}`} />{label[t.status]}</span>
+                {t.chamando && <span className="flex items-center gap-1 font-semibold text-warning"><Bell className="h-3 w-3" />Chamando</span>}
               </span>
             </div>
           );

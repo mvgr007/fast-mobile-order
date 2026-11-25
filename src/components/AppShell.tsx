@@ -1,12 +1,33 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { LayoutGrid, ChefHat, LogOut } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useStoreHydrated } from "@/hooks/use-store-hydrated";
 
-export function AppShell({ title, back, children }: { title: string; back?: ReactNode; children: ReactNode }) {
+export function AppShell({
+  title,
+  back,
+  children,
+  exigeGarcom = true,
+}: {
+  title: string;
+  back?: ReactNode;
+  children: ReactNode;
+  /** Telas do modo garçom só abrem com garçom logado. O painel da cozinha usa false. */
+  exigeGarcom?: boolean;
+}) {
   const waiter = useStore((s) => s.waiter);
   const logout = useStore((s) => s.logout);
+  const hydrated = useStoreHydrated();
   const nav = useNavigate();
+  const bloqueado = exigeGarcom && (!hydrated || !waiter);
+
+  useEffect(() => {
+    if (exigeGarcom && hydrated && !waiter) nav({ to: "/garcom", replace: true });
+  }, [exigeGarcom, hydrated, waiter, nav]);
+
+  if (bloqueado) return <div className="min-h-screen bg-background" />;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">

@@ -37,7 +37,7 @@ function Cozinha() {
   const list = tickets.filter((t) => sector === "todos" || t.sector === sector).sort((a, b) => a.createdAt - b.createdAt);
 
   return (
-    <AppShell title="Produção">
+    <AppShell title="Produção" exigeGarcom={false}>
       <div className="mb-5 flex gap-2">
         {(["todos", "cozinha", "bar"] as const).map((s) => (
           <button key={s} onClick={() => setSector(s)}

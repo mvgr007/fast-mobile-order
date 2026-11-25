@@ -18,6 +18,7 @@ export const TIPOS_ERRO = {
   REDE_FIREWALL: { codigo: "E103", categoria: "REDE", mensagem: "Porta do Conector bloqueada (firewall)." },
   REDE_TIMEOUT: { codigo: "E104", categoria: "REDE", mensagem: "Servidor FAST demorou para responder." },
   REDE_CONECTOR_OFFLINE: { codigo: "E105", categoria: "REDE", mensagem: "Conector FAST está desligado." },
+  REDE_CONTEUDO_MISTO: { codigo: "E106", categoria: "REDE", mensagem: "Página segura (HTTPS) não pode acessar o Conector FAST por HTTP. Ative HTTPS no Conector." },
   NEG_MESA_FECHADA: { codigo: "E201", categoria: "NEGOCIO", mensagem: "Mesa já fechada ou transferida no FAST." },
   NEG_PRODUTO_ESGOTADO: { codigo: "E202", categoria: "NEGOCIO", mensagem: "Produto esgotado ou inativo." },
   NEG_PEDIDO_DUPLICADO: { codigo: "E203", categoria: "NEGOCIO", mensagem: "Pedido duplicado bloqueado." },
