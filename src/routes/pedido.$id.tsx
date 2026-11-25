@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { ArrowLeft, Minus, Plus, Search, Send, Receipt, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Bell, Minus, Plus, Search, Send, Receipt, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { ItemOptions } from "@/components/ItemOptions";
 import { useStore, lineTotal, tableItems } from "@/lib/store";
-import { brl, categories, products, type Product } from "@/lib/mock";
+import { brl, categories, precoUnitario, products, type Product } from "@/lib/mock";
 
 export const Route = createFileRoute("/pedido/$id")({
   head: ({ params }) => ({
@@ -23,11 +24,23 @@ function Pedido() {
   const nav = useNavigate();
   const cart = useStore((s) => s.carts[id]) ?? [];
   const tickets = useStore((s) => s.tickets);
-  const { addToCart, changeQty, sendOrder, requestBill } = useStore();
+  const table = useStore((s) => s.tables.find((t) => t.id === id));
+  const { addToCart, changeQty, sendOrder, requestBill, reopenTable, dismissCall } = useStore();
   const [cat, setCat] = useState(categories[0]);
   const [q, setQ] = useState("");
   const [picking, setPicking] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const emFechamento = table?.status === "conta";
+  const chamando = table?.chamando === true;
+  const waiter = useStore((s) => s.waiter);
+
+  // Garçom abriu a mesa: o chamado do autoatendimento foi atendido.
+  useEffect(() => {
+    if (chamando && waiter) {
+      dismissCall(id);
+      toast(`Chamado da mesa ${id} atendido`);
+    }
+  }, [chamando, waiter, dismissCall, id]);
 
   const list = useMemo(
     () => products.filter((p) => (q ? p.name.toLowerCase().includes(q.toLowerCase()) : p.category === cat)),
@@ -38,9 +51,14 @@ function Pedido() {
   const cartQty = cart.reduce((a, i) => a + i.qty, 0);
 
   const send = () => {
-    sendOrder(id);
+    if (!sendOrder(id)) return;
     setCartOpen(false);
     toast.success(`Pedido da mesa ${id} enviado para produção`);
+  };
+
+  const reabrir = () => {
+    reopenTable(id);
+    toast.success(`Mesa ${id} reaberta para novos lançamentos`);
   };
 
   const cartPanel = (
@@ -80,7 +98,15 @@ function Pedido() {
         )}
       </div>
       <div className="space-y-2 border-t border-border p-4">
-        <button disabled={!cart.length} onClick={send}
+        {emFechamento && (
+          <div className="rounded-xl border border-warning/60 bg-warning/10 p-3 text-sm">
+            <p>Conta solicitada. A mesa não aceita novos itens até ser reaberta.</p>
+            <button onClick={reabrir} className="mt-2 flex items-center gap-1 font-semibold text-warning">
+              <RotateCcw className="h-4 w-4" /> Reabrir mesa
+            </button>
+          </div>
+        )}
+        <button disabled={!cart.length || emFechamento} onClick={send}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary font-display text-lg font-semibold text-primary-foreground disabled:opacity-40">
           <Send className="h-5 w-5" /> Enviar {cart.length > 0 && `· ${brl(cartTotal)}`}
         </button>
@@ -98,6 +124,12 @@ function Pedido() {
     <AppShell title={`Mesa ${id}`} back={<Link to="/mesas" className="shrink-0 rounded-lg p-1 hover:bg-secondary" aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Link>}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
+          {emFechamento && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/60 bg-warning/10 p-3 text-sm lg:hidden">
+              <span className="flex items-center gap-2"><Bell className="h-4 w-4 text-warning" />Conta solicitada — reabra a mesa para lançar itens.</span>
+              <button onClick={reabrir} className="font-semibold text-warning">Reabrir mesa</button>
+            </div>
+          )}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produto..."
@@ -150,7 +182,7 @@ function ProductSheet({ p, onClose, onAdd }: { p: Product; onClose: () => void; 
   const [qty, setQty] = useState(1);
   const [addons, setAddons] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
-  const unit = p.price + (p.addons ?? []).filter((a) => addons.includes(a.name)).reduce((s, a) => s + a.price, 0);
+  const unit = precoUnitario(p, addons);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/70 sm:items-center" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-2xl border border-border bg-card p-5 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
@@ -159,31 +191,7 @@ function ProductSheet({ p, onClose, onAdd }: { p: Product; onClose: () => void; 
           <div><h3 className="font-display text-xl font-bold">{p.name}</h3>{p.desc && <p className="text-sm text-muted-foreground">{p.desc}</p>}</div>
           <button onClick={onClose} aria-label="Fechar"><X className="h-5 w-5" /></button>
         </div>
-        {p.addons && (
-          <div className="mt-4">
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionais</h4>
-            <div className="space-y-2">
-              {p.addons.map((a) => {
-                const on = addons.includes(a.name);
-                return (
-                  <button key={a.name} onClick={() => setAddons(on ? addons.filter((x) => x !== a.name) : [...addons, a.name])}
-                    className={`flex w-full justify-between rounded-xl border p-3 text-sm ${on ? "border-primary bg-primary/10" : "border-border"}`}>
-                    <span>{a.name}</span><span>+ {brl(a.price)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        <div className="mt-4">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Observação</h4>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {["Sem cebola", "Bem passado", "Sem gelo", "Pouco sal"].map((s) => (
-              <button key={s} onClick={() => setNotes(notes ? `${notes}, ${s.toLowerCase()}` : s)} className="rounded-full bg-secondary px-3 py-1 text-xs">{s}</button>
-            ))}
-          </div>
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex: sem tomate" className="h-11 w-full rounded-xl border border-border bg-background px-3 outline-none focus:border-primary" />
-        </div>
+        <ItemOptions product={p} addons={addons} onAddonsChange={setAddons} notes={notes} onNotesChange={setNotes} />
         <div className="mt-5 flex items-center gap-3">
           <div className="flex items-center gap-2">
             <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary"><Minus className="h-4 w-4" /></button>

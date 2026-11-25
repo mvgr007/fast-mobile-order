@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Bell, Receipt, ShoppingCart, Minus, Plus, Settings, X, LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { categories, products, brl, type Product } from "@/lib/mock";
+import { categories, products, brl, precoUnitario, type Product } from "@/lib/mock";
 import { useStore, tableItems, tableTotal, lineTotal } from "@/lib/store";
+import { registrarErro } from "@/lib/logger";
+import { ItemOptions } from "@/components/ItemOptions";
 
 export const Route = createFileRoute("/autoatendimento")({
   head: () => ({
@@ -19,18 +21,24 @@ export const Route = createFileRoute("/autoatendimento")({
   component: Kiosk,
 });
 
+const OPERADOR_KIOSK = "Autoatendimento";
+
 function Kiosk() {
   const table = useStore((s) => s.config.kioskTable);
   const adminPin = useStore((s) => s.config.adminPin);
+  const demo = useStore((s) => s.config.demo);
   const carts = useStore((s) => s.carts);
   const tickets = useStore((s) => s.tickets);
-  const { addToCart, changeQty, removeItem, sendOrder, requestBill, login } = useStore.getState();
+  const mesa = useStore((s) => s.tables.find((t) => t.id === table));
+  const { addToCart, changeQty, removeItem, sendOrder, requestBill, callWaiter } = useStore.getState();
   const [cat, setCat] = useState(categories[0]);
   const [panel, setPanel] = useState<null | "cart" | "bill">(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitPin, setExitPin] = useState("");
   const [pick, setPick] = useState<Product | null>(null);
   const [pickQty, setPickQty] = useState(1);
+  const [pickAddons, setPickAddons] = useState<string[]>([]);
+  const [pickNotes, setPickNotes] = useState("");
   const [step, setStep] = useState<null | "confirm" | "more">(null);
   const nav = useNavigate();
 
@@ -50,17 +58,39 @@ function Kiosk() {
   const cart = carts[table] ?? [];
   const cartTotal = cart.reduce((a, i) => a + lineTotal(i), 0);
   const sent = tableItems(tickets, table);
+  const emFechamento = mesa?.status === "conta";
+  const pickUnit = pick ? precoUnitario(pick, pickAddons) : 0;
+
+  const abrirProduto = (p: Product) => {
+    setPick(p);
+    setPickQty(1);
+    setPickAddons([]);
+    setPickNotes("");
+    setStep("confirm");
+  };
+  const fecharProduto = () => {
+    setPick(null);
+    setStep(null);
+  };
+
   const send = () => {
-    login("Autoatendimento");
-    sendOrder(table);
-    useStore.getState().logout();
+    if (!sendOrder(table, OPERADOR_KIOSK)) return;
     setPanel(null);
     toast.success("Pedido enviado! Em breve o garçom trará até você.");
   };
 
+  const chamarGarcom = () => {
+    callWaiter(table);
+    toast.success("Garçom chamado! Ele já está a caminho.");
+  };
+
   const confirmExit = (e: FormEvent) => {
     e.preventDefault();
-    if (exitPin !== adminPin) { toast.error("Senha incorreta"); setExitPin(""); return; }
+    if (exitPin !== adminPin) {
+      registrarErro("OP_SAIDA_KIOSK", `Mesa ${table}`);
+      setExitPin("");
+      return;
+    }
     setExitOpen(false);
     toast.success("Autoatendimento encerrado.");
     nav({ to: "/" });
@@ -73,7 +103,9 @@ function Kiosk() {
           <form onSubmit={confirmExit} className="w-full max-w-sm rounded-2xl border border-border bg-card p-6">
             <LogOut className="h-10 w-10 text-primary" />
             <h2 className="mt-3 font-display text-2xl font-bold">Encerrar autoatendimento</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Digite a senha do gerente ou administrador cadastrado no FAST (demo: {adminPin}).</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Digite a senha do gerente ou administrador cadastrado no FAST{demo ? ` (demo: ${adminPin})` : ""}.
+            </p>
             <input type="password" inputMode="numeric" autoFocus value={exitPin} onChange={(e) => setExitPin(e.target.value)} placeholder="Senha" className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-lg" />
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => setExitOpen(false)} className="rounded-xl bg-secondary py-3 font-semibold">Cancelar</button>
@@ -90,7 +122,7 @@ function Kiosk() {
           </div>
           <div className="flex gap-2">
             <button onClick={() => setPanel("cart")} className="relative flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold" aria-label="Carrinho"><ShoppingCart className="h-5 w-5" /><span className="hidden sm:inline">Carrinho</span>{cart.length > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">{cart.reduce((a, i) => a + i.qty, 0)}</span>}</button>
-            <button onClick={() => toast.success("Garçom chamado! Ele já está a caminho.")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Bell className="h-5 w-5" /><span className="hidden sm:inline">Chamar garçom</span></button>
+            <button onClick={chamarGarcom} className={`flex items-center gap-2 rounded-xl px-4 py-3 font-semibold ${mesa?.chamando ? "bg-warning/20 text-warning" : "bg-secondary"}`}><Bell className="h-5 w-5" /><span className="hidden sm:inline">{mesa?.chamando ? "Garçom chamado" : "Chamar garçom"}</span></button>
             <button onClick={() => setPanel("bill")} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold"><Receipt className="h-5 w-5" /><span className="hidden sm:inline">Minha conta</span></button>
             <button onClick={() => { setExitPin(""); setExitOpen(true); }} className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-3 font-semibold text-muted-foreground" aria-label="Sair"><LogOut className="h-5 w-5" /><span className="hidden sm:inline">Sair</span></button>
           </div>
@@ -102,9 +134,17 @@ function Kiosk() {
         </div>
       </header>
 
+      {emFechamento && (
+        <div className="mx-auto mt-4 max-w-6xl px-4">
+          <div className="rounded-xl border border-warning/60 bg-warning/10 p-4 text-center font-semibold">
+            Conta solicitada. Para pedir mais itens, chame o garçom.
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto grid max-w-6xl gap-4 px-4 py-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.filter((p) => p.category === cat).map((p) => (
-          <button key={p.id} onClick={() => { setPick(p); setPickQty(1); setStep("confirm"); }}
+          <button key={p.id} onClick={() => abrirProduto(p)}
             className="overflow-hidden rounded-2xl border border-border bg-card text-left transition active:scale-[0.98]">
             {p.imageUrl ? <img src={p.imageUrl} alt={p.name} loading="lazy" className="aspect-[4/3] w-full object-cover" /> : <div className="flex aspect-[4/3] items-center justify-center bg-secondary font-display text-2xl text-muted-foreground">{p.category}</div>}
             <div className="p-4">
@@ -118,7 +158,7 @@ function Kiosk() {
 
       {pick && step && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 text-center">
             {step === "confirm" ? (
               <>
                 <h2 className="font-display text-xl font-bold">Confirma o lançamento do produto {pick.name} na quantidade {pickQty}?</h2>
@@ -127,10 +167,19 @@ function Kiosk() {
                   <span className="w-10 font-display text-3xl font-bold">{pickQty}</span>
                   <button onClick={() => setPickQty(pickQty + 1)} className="rounded-xl bg-secondary p-3" aria-label="Aumentar"><Plus className="h-5 w-5" /></button>
                 </div>
-                <p className="mt-3 font-display text-lg font-semibold text-primary">{brl(pick.price * pickQty)}</p>
+                <ItemOptions product={pick} addons={pickAddons} onAddonsChange={setPickAddons} notes={pickNotes} onNotesChange={setPickNotes} size="lg" />
+                <p className="mt-4 font-display text-lg font-semibold text-primary">{brl(pickUnit * pickQty)}</p>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button onClick={() => { setPick(null); setStep(null); }} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
-                  <button onClick={() => { addToCart(table, { productId: pick.id, name: pick.name, qty: pickQty, unit: pick.price, addons: [], notes: "" }); setStep("more"); }} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Sim, confirmar</button>
+                  <button onClick={fecharProduto} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
+                  <button
+                    onClick={() => {
+                      addToCart(table, { productId: pick.id, name: pick.name, qty: pickQty, unit: pickUnit, addons: pickAddons, notes: pickNotes.trim() });
+                      setStep("more");
+                    }}
+                    className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground"
+                  >
+                    Sim, confirmar
+                  </button>
                 </div>
               </>
             ) : (
@@ -139,8 +188,8 @@ function Kiosk() {
                 <h2 className="mt-3 font-display text-xl font-bold">{pickQty}× {pick.name} foi para o carrinho.</h2>
                 <p className="mt-2 text-muted-foreground">Deseja lançar mais itens?</p>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button onClick={() => { setPick(null); setStep(null); setPanel("cart"); }} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
-                  <button onClick={() => { setPick(null); setStep(null); }} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Sim</button>
+                  <button onClick={() => { fecharProduto(); setPanel("cart"); }} className="rounded-xl bg-secondary py-3 font-semibold">Não</button>
+                  <button onClick={fecharProduto} className="rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Sim</button>
                 </div>
               </>
             )}
@@ -169,6 +218,8 @@ function Kiosk() {
                   <div key={i.uid} className="flex items-center justify-between gap-3 border-b border-border py-3">
                     <div className="min-w-0">
                       <div className="font-semibold">{i.name}</div>
+                      {i.addons.length > 0 && <div className="text-sm text-muted-foreground">+ {i.addons.join(", ")}</div>}
+                      {i.notes && <div className="text-sm italic text-warning">"{i.notes}"</div>}
                       <div className="text-sm text-muted-foreground">{i.qty}× {brl(i.unit)} = {brl(lineTotal(i))}</div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -180,10 +231,13 @@ function Kiosk() {
                   </div>
                 ))}
                 <div className="mt-4 flex justify-between font-display text-xl font-bold"><span>Total</span><span>{brl(cartTotal)}</span></div>
+                {emFechamento && cart.length > 0 && (
+                  <p className="mt-4 rounded-xl bg-warning/10 p-3 text-sm">A conta desta mesa já foi solicitada. Chame o garçom para reabrir a mesa e enviar estes itens.</p>
+                )}
                 {cart.length === 0 ? (
                   <button onClick={() => setPanel(null)} className="mt-5 w-full rounded-xl bg-secondary py-4 font-display text-lg font-bold">Voltar ao cardápio</button>
                 ) : (
-                  <button onClick={send} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground">Confirmar lançamento para preparo</button>
+                  <button onClick={send} disabled={emFechamento} className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">Confirmar lançamento para preparo</button>
                 )}
               </>
             ) : (
@@ -192,8 +246,8 @@ function Kiosk() {
                   <div key={i.uid} className="flex justify-between border-b border-border py-2"><span>{i.qty}× {i.name}</span><span>{brl(lineTotal(i))}</span></div>
                 ))}
                 <div className="mt-4 flex justify-between font-display text-xl font-bold"><span>Total</span><span>{brl(tableTotal(tickets, table))}</span></div>
-                <button onClick={() => { requestBill(table); setPanel(null); toast.success("Fechamento solicitado! O garçom trará sua conta."); }} disabled={!sent.length}
-                  className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">Pedir fechamento da conta</button>
+                <button onClick={() => { requestBill(table); setPanel(null); toast.success("Fechamento solicitado! O garçom trará sua conta."); }} disabled={!sent.length || emFechamento}
+                  className="mt-5 w-full rounded-xl bg-primary py-4 font-display text-lg font-bold text-primary-foreground disabled:opacity-50">{emFechamento ? "Fechamento já solicitado" : "Pedir fechamento da conta"}</button>
               </>
             )}
           </div>

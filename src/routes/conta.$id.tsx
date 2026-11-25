@@ -3,8 +3,9 @@ import { useState } from "react";
 import { ArrowLeft, Banknote, CreditCard, Minus, Plus, QrCode, CheckCircle2, Printer, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { useStore, lineTotal, tableItems, type LineItem } from "@/lib/store";
+import { useStore, lineTotal, tableItems, calcularConta, SERVICE_RATE, type PaymentMethod } from "@/lib/store";
 import { brl } from "@/lib/mock";
+import { montarCupom } from "@/lib/cupom";
 
 export const Route = createFileRoute("/conta/$id")({
   head: ({ params }) => ({
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/conta/$id")({
   component: Conta,
 });
 
-const methods = [
+const methods: { id: PaymentMethod; label: string; icon: typeof QrCode }[] = [
   { id: "pix", label: "PIX", icon: QrCode },
   { id: "credito", label: "Crédito", icon: CreditCard },
   { id: "debito", label: "Débito", icon: CreditCard },
@@ -33,19 +34,18 @@ function Conta() {
   const items = tableItems(tickets, id);
   const [service, setService] = useState(true);
   const [people, setPeople] = useState(1);
-  const [method, setMethod] = useState("pix");
+  const [method, setMethod] = useState<PaymentMethod>("pix");
 
-  const subtotal = items.reduce((a, i) => a + lineTotal(i), 0);
-  const fee = service ? subtotal * 0.1 : 0;
-  const total = subtotal + fee;
+  const { subtotal, fee, total } = calcularConta(items, service);
 
   const [preview, setPreview] = useState(false);
   const waiter = useStore((s) => s.tables.find((t) => t.id === id)?.waiter);
-  const receipt = buildReceipt({ id, items, subtotal, fee, total, people, waiter });
+  const receipt = montarCupom({ id, items, subtotal, fee, total, people, waiter });
 
   const finish = () => {
-    closeTable(id);
-    toast.success(`Mesa ${id} paga via ${methods.find((m) => m.id === method)?.label} e liberada`);
+    const sale = closeTable(id, { method, serviceFee: service, people });
+    if (!sale) return;
+    toast.success(`Mesa ${id} paga via ${methods.find((m) => m.id === method)?.label} (${brl(sale.total)}) e liberada`);
     nav({ to: "/mesas" });
   };
 
@@ -72,7 +72,7 @@ function Conta() {
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{brl(subtotal)}</span></div>
             <label className="flex cursor-pointer items-center justify-between">
               <span className="flex items-center gap-2 text-muted-foreground">
-                <input type="checkbox" checked={service} onChange={(e) => setService(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" /> Taxa de serviço (10%)
+                <input type="checkbox" checked={service} onChange={(e) => setService(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" /> Taxa de serviço ({Math.round(SERVICE_RATE * 100)}%)
               </span>
               <span>{brl(fee)}</span>
             </label>
@@ -108,7 +108,7 @@ function Conta() {
             className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary font-display text-lg font-semibold text-primary-foreground disabled:opacity-40">
             <CheckCircle2 className="h-5 w-5" /> Receber e liberar mesa
           </button>
-          <p className="text-center text-xs text-muted-foreground">Pagamento simulado — na versão final emite NFC-e pelo FAST.</p>
+          <p className="text-center text-xs text-muted-foreground">Pagamento simulado — a venda fica registrada no aparelho; na versão final emite NFC-e pelo FAST.</p>
         </section>
       </div>
       {preview && (
@@ -128,35 +128,4 @@ function Conta() {
       )}
     </AppShell>
   );
-}
-
-const W = 40;
-const center = (t: string) => t.slice(0, W).padStart(Math.floor((W + Math.min(t.length, W)) / 2)).padEnd(W);
-const lr = (l: string, r: string) => { const room = W - r.length - 1; return (l.length > room ? l.slice(0, room) : l).padEnd(room) + " " + r; };
-const money = (v: number) => v.toFixed(2).replace(".", ",");
-
-function buildReceipt({ id, items, subtotal, fee, total, people, waiter }: { id: number; items: LineItem[]; subtotal: number; fee: number; total: number; people: number; waiter?: string | undefined }) {
-  const line = "-".repeat(W);
-  const d = new Date();
-  const out = [
-    center("RESTAURANTE DEMONSTRACAO"),
-    center("CNPJ 00.000.000/0001-00"),
-    line,
-    center("*** PRE-CONTA - MESA " + String(id).padStart(2, "0") + " ***"),
-    center("NAO E DOCUMENTO FISCAL"),
-    line,
-    lr(`Data: ${d.toLocaleDateString("pt-BR")}`, d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })),
-    `Garcom: ${waiter ?? "-"}`,
-    line,
-    lr("QTD ITEM", "TOTAL"),
-  ];
-  items.forEach((i) => {
-    out.push(lr(`${i.qty}x ${i.name}`, money(lineTotal(i))));
-    i.addons.forEach((a) => out.push(`   + ${a}`.slice(0, W)));
-    if (i.notes) out.push(`   Obs: ${i.notes}`.slice(0, W));
-  });
-  out.push(line, lr("Subtotal", money(subtotal)), lr("Taxa de servico (10%)", money(fee)), lr("TOTAL R$", money(total)));
-  if (people > 1) out.push(lr(`Dividido por ${people} pessoas`, money(total / people)));
-  out.push(line, center("Obrigado pela preferencia!"), center("FAST Mobile - Insertsoft"));
-  return out.join("\n");
 }

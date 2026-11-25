@@ -53,5 +53,9 @@ export const products: Product[] = [
   { id: "p16", imageUrl: petit, name: "Petit Gâteau", price: 24, category: "Sobremesas", sector: "cozinha", addons: [{ name: "Bola extra de sorvete", price: 6 }] },
 ];
 
-export const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** Preço de uma unidade do produto somando os adicionais escolhidos. */
+export const precoUnitario = (p: Product, addons: string[]) =>
+  p.price + (p.addons ?? []).filter((a) => addons.includes(a.name)).reduce((s, a) => s + a.price, 0);
+
+export const brl =(v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 export const minutesSince = (t?: number) => (t ? Math.max(0, Math.floor((Date.now() - t) / 60000)) : 0);
